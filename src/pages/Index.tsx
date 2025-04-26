@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -18,12 +18,32 @@ interface Album {
   photoCount: number;
 }
 
+// Ключ для хранения альбомов в localStorage
+const ALBUMS_STORAGE_KEY = 'photo-app-albums';
+
 export default function Index() {
   const { toast } = useToast();
   const [albums, setAlbums] = useState<Album[]>([]);
   const [newAlbumTitle, setNewAlbumTitle] = useState("");
   const [newAlbumDescription, setNewAlbumDescription] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+
+  // Загрузка альбомов из localStorage при первом рендере
+  useEffect(() => {
+    const savedAlbums = localStorage.getItem(ALBUMS_STORAGE_KEY);
+    if (savedAlbums) {
+      try {
+        setAlbums(JSON.parse(savedAlbums));
+      } catch (e) {
+        console.error("Ошибка при загрузке альбомов из localStorage:", e);
+      }
+    }
+  }, []);
+
+  // Сохранение альбомов в localStorage при их изменении
+  useEffect(() => {
+    localStorage.setItem(ALBUMS_STORAGE_KEY, JSON.stringify(albums));
+  }, [albums]);
 
   const handleAddAlbum = () => {
     if (!newAlbumTitle.trim()) {
@@ -57,6 +77,10 @@ export default function Index() {
   const handleDeleteAlbum = (albumId: string, albumTitle: string) => {
     setAlbums(albums.filter(album => album.id !== albumId));
     
+    // Удаляем также фотографии альбома из localStorage
+    const storageKey = `photo-app-photos-${albumId}`;
+    localStorage.removeItem(storageKey);
+    
     toast({
       title: "Альбом удален",
       description: `Альбом "${albumTitle}" был удален`,
@@ -81,11 +105,6 @@ export default function Index() {
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Мои фотоальбомы</h1>
           <div className="flex gap-4">
-            <Button asChild>
-              <Link to="/gallery">
-                Все фотографии
-              </Link>
-            </Button>
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
                 <Button variant="default">

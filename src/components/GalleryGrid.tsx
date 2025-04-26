@@ -12,54 +12,50 @@ interface Photo {
   src: string;
   alt: string;
   tags: string[];
+  orientation?: "portrait" | "landscape";
+  albumId?: string;
 }
 
 interface GalleryGridProps {
   photos: Photo[];
   gapSize: number;
-  orientation: string;
-  showDeleteControls: boolean;
   onDeletePhoto: (id: string) => void;
 }
 
 export const GalleryGrid = ({ 
   photos, 
   gapSize, 
-  orientation, 
-  showDeleteControls,
   onDeletePhoto 
 }: GalleryGridProps) => {
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
   
-  // Определяем соотношение сторон и количество элементов в ряду
-  const aspectRatio = orientation === 'portrait' ? 2/3 : 3/2; // 10x15 или 15x10
-  const columns = orientation === 'portrait' ? 5 : 3; // 5 в ряд для портретной, 3 для ландшафтной
-  
   return (
     <>
       <div 
-        className="grid"
+        className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5"
         style={{ 
-          gap: `${gapSize}px`,
-          gridTemplateColumns: `repeat(${columns}, 1fr)`
+          gap: `${gapSize}px`
         }}
       >
-        {photos.map((photo) => (
-          <Card 
-            key={photo.id} 
-            className="overflow-hidden animate-fade-in hover:shadow-md transition-shadow duration-300 group relative"
-          >
-            <div className="overflow-hidden">
-              <AspectRatio ratio={aspectRatio}>
-                <img
-                  src={photo.src}
-                  alt={photo.alt}
-                  className="object-cover w-full h-full transition-transform duration-300 hover:scale-105 cursor-pointer"
-                  onClick={() => setSelectedPhoto(photo)}
-                />
-              </AspectRatio>
-              
-              {showDeleteControls && (
+        {photos.map((photo) => {
+          // Определение соотношения для каждого фото индивидуально
+          const aspectRatio = photo.orientation === 'landscape' ? 3/2 : 2/3; // 15x10 или 10x15
+          
+          return (
+            <Card 
+              key={photo.id} 
+              className="overflow-hidden animate-fade-in hover:shadow-md transition-shadow duration-300 group relative"
+            >
+              <div className="overflow-hidden">
+                <AspectRatio ratio={aspectRatio}>
+                  <img
+                    src={photo.src}
+                    alt={photo.alt}
+                    className="object-cover w-full h-full transition-transform duration-300 hover:scale-105 cursor-pointer"
+                    onClick={() => setSelectedPhoto(photo)}
+                  />
+                </AspectRatio>
+                
                 <Button 
                   variant="destructive" 
                   size="icon" 
@@ -71,22 +67,22 @@ export const GalleryGrid = ({
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
-              )}
-            </div>
-            <CardFooter className="p-2 flex justify-between items-center">
-              <div>
-                <h3 className="font-medium text-sm truncate">{photo.title}</h3>
               </div>
-              <div className="flex gap-1">
-                {photo.tags.slice(0, 2).map((tag) => (
-                  <span key={tag} className="text-xs bg-secondary px-2 py-0.5 rounded-full">
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            </CardFooter>
-          </Card>
-        ))}
+              <CardFooter className="p-2 flex justify-between items-center">
+                <div>
+                  <h3 className="font-medium text-sm truncate">{photo.title}</h3>
+                </div>
+                <div className="flex gap-1">
+                  {photo.tags.slice(0, 2).map((tag) => (
+                    <span key={tag} className="text-xs bg-secondary px-2 py-0.5 rounded-full">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </CardFooter>
+            </Card>
+          );
+        })}
       </div>
       
       {selectedPhoto && (

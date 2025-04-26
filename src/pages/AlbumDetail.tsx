@@ -11,7 +11,6 @@ import { useToast } from "@/components/ui/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Photo {
@@ -20,6 +19,7 @@ interface Photo {
   src: string;
   alt: string;
   tags: string[];
+  orientation: "portrait" | "landscape";
   albumId: string;
 }
 
@@ -28,7 +28,11 @@ interface Album {
   title: string;
   description: string;
   thumbnailSrc: string;
+  photoCount: number;
 }
+
+// Ключи для хранения в localStorage
+const ALBUMS_STORAGE_KEY = 'photo-app-albums';
 
 export default function AlbumDetail() {
   const { id } = useParams<{ id: string }>();
@@ -40,44 +44,112 @@ export default function AlbumDetail() {
   const [albumTitle, setAlbumTitle] = useState("");
   const [albumDescription, setAlbumDescription] = useState("");
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [orientation, setOrientation] = useState("portrait");
-  const [showDeleteControls, setShowDeleteControls] = useState(false);
 
-  // Имитация загрузки данных альбома
+  // Ключ для хранения фотографий текущего альбома
+  const photosStorageKey = `photo-app-photos-${id}`;
+
+  // Загрузка данных альбома и фотографий
   useEffect(() => {
     if (id) {
-      // В реальном приложении здесь был бы запрос к API
-      setAlbum({
-        id,
-        title: "Мой альбом",
-        description: "Описание альбома",
-        thumbnailSrc: "https://images.unsplash.com/photo-1557682250-33bd709cbe85?w=600&auto=format&fit=crop",
-      });
-      
-      setAlbumTitle("Мой альбом");
-      setAlbumDescription("Описание альбома");
-    }
-  }, [id]);
+      // Загрузка альбомов
+      const savedAlbums = localStorage.getItem(ALBUMS_STORAGE_KEY);
+      if (savedAlbums) {
+        try {
+          const allAlbums: Album[] = JSON.parse(savedAlbums);
+          const currentAlbum = allAlbums.find(a => a.id === id);
+          
+          if (currentAlbum) {
+            setAlbum(currentAlbum);
+            setAlbumTitle(currentAlbum.title);
+            setAlbumDescription(currentAlbum.description);
+          }
+        } catch (e) {
+          console.error("Ошибка при загрузке альбомов:", e);
+        }
+      }
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+      // Загрузка фотографий альбома
+      const savedPhotos = localStorage.getItem(photosStorageKey);
+      if (savedPhotos) {
+        try {
+          setPhotos(JSON.parse(savedPhotos));
+        } catch (e) {
+          console.error("Ошибка при загрузке фотографий:", e);
+        }
+      }
+    }
+  }, [id, photosStorageKey]);
+
+  // Сохранение фотографий в localStorage при их изменении
+  useEffect(() => {
+    if (id) {
+      localStorage.setItem(photosStorageKey, JSON.stringify(photos));
+      
+      // Обновление счетчика фотографий в альбоме
+      const savedAlbums = localStorage.getItem(ALBUMS_STORAGE_KEY);
+      if (savedAlbums && album) {
+        try {
+          const allAlbums: Album[] = JSON.parse(savedAlbums);
+          const updatedAlbums = allAlbums.map(a => {
+            if (a.id === id) {
+              return {
+                ...a,
+                photoCount: photos.length,
+                // Если есть фотографии, используем первую как обложку альбома
+                thumbnailSrc: photos.length > 0 ? photos[0].src : a.thumbnailSrc
+              };
+            }
+            return a;
+          });
+          
+          localStorage.setItem(ALBUMS_STORAGE_KEY, JSON.stringify(updatedAlbums));
+        } catch (e) {
+          console.error("Ошибка при обновлении данных альбома:", e);
+        }
+      }
+    }
+  }, [photos, id, album, photosStorageKey]);
+
+  // Функция для определения ориентации загруженного изображения
+  const detectImageOrientation = (url: string): Promise<"portrait" | "landscape"> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = function() {
+        resolve(img.width > img.height ? "landscape" : "portrait");
+      };
+      img.onerror = function() {
+        // По умолчанию портретная ориентация, если не удалось определить
+        resolve("portrait");
+      };
+      img.src = url;
+    });
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || files.length === 0 || !id) return;
 
     const newPhotos: Photo[] = [];
 
-    Array.from(files).forEach((file) => {
+    // Используем Promise.all для обработки всех файлов и определения их ориентации
+    const promises = Array.from(files).map(async (file) => {
       const url = URL.createObjectURL(file);
+      const orientation = await detectImageOrientation(url);
+      
       const newPhoto: Photo = {
         id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
         title: file.name.split('.')[0] || "Без названия",
         src: url,
         alt: file.name.split('.')[0] || "Изображение без описания",
         tags: [],
+        orientation: orientation,
         albumId: id
       };
       
       newPhotos.push(newPhoto);
     });
+
+    await Promise.all(promises);
 
     setPhotos([...photos, ...newPhotos]);
     
@@ -123,11 +195,28 @@ export default function AlbumDetail() {
     }
 
     if (album) {
-      setAlbum({
+      const updatedAlbum = {
         ...album,
         title: albumTitle,
         description: albumDescription
-      });
+      };
+      
+      setAlbum(updatedAlbum);
+      
+      // Обновление альбома в localStorage
+      const savedAlbums = localStorage.getItem(ALBUMS_STORAGE_KEY);
+      if (savedAlbums) {
+        try {
+          const allAlbums: Album[] = JSON.parse(savedAlbums);
+          const updatedAlbums = allAlbums.map(a => 
+            a.id === album.id ? updatedAlbum : a
+          );
+          
+          localStorage.setItem(ALBUMS_STORAGE_KEY, JSON.stringify(updatedAlbums));
+        } catch (e) {
+          console.error("Ошибка при обновлении данных альбома:", e);
+        }
+      }
       
       setIsEditDialogOpen(false);
       
@@ -228,19 +317,6 @@ export default function AlbumDetail() {
           <CardContent className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div>
-                <h2 className="text-lg font-medium mb-4">Ориентация фотографий</h2>
-                <Select value={orientation} onValueChange={setOrientation}>
-                  <SelectTrigger id="orientation-select">
-                    <SelectValue placeholder="Выберите ориентацию" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="portrait">Портретная (10x15)</SelectItem>
-                    <SelectItem value="landscape">Ландшафтная (15x10)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
                 <h2 className="text-lg font-medium mb-4">Настройка отступов: {gapSize}px</h2>
                 <Slider
                   value={[gapSize]}
@@ -250,15 +326,6 @@ export default function AlbumDetail() {
                   step={4}
                   className="py-4"
                 />
-                
-                <div className="flex items-center space-x-2 mt-4">
-                  <Switch 
-                    id="delete-mode" 
-                    checked={showDeleteControls}
-                    onCheckedChange={setShowDeleteControls}
-                  />
-                  <Label htmlFor="delete-mode">Режим удаления</Label>
-                </div>
               </div>
             </div>
           </CardContent>
@@ -286,8 +353,6 @@ export default function AlbumDetail() {
             <GalleryGrid 
               photos={photos} 
               gapSize={gapSize}
-              orientation={orientation}
-              showDeleteControls={showDeleteControls}
               onDeletePhoto={handleDeletePhoto}
             />
           </div>
