@@ -1,78 +1,94 @@
 
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { GalleryHorizontal, Images } from "lucide-react";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Layout } from "@/components/layout";
 
+// Примеры альбомов
 const albums = [
   {
-    id: "nature",
+    id: "1",
     title: "Природа",
-    cover: "https://images.unsplash.com/photo-1469474968028-56623f02e42e",
-    count: 12
+    description: "Коллекция красивых природных пейзажей",
+    thumbnailSrc: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05",
+    photoCount: 24,
   },
   {
-    id: "architecture",
-    title: "Архитектура",
-    cover: "https://images.unsplash.com/photo-1616578492900-ea5a8fc6c341",
-    count: 8
+    id: "2",
+    title: "Городская жизнь",
+    description: "Архитектура и уличные сцены городов",
+    thumbnailSrc: "https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b",
+    photoCount: 18,
   },
   {
-    id: "travel",
+    id: "3",
+    title: "Животные",
+    description: "Дикие и домашние животные в естественной среде",
+    thumbnailSrc: "https://images.unsplash.com/photo-1474511320723-9a56873867b5",
+    photoCount: 15,
+  },
+  {
+    id: "4",
     title: "Путешествия",
-    cover: "https://images.unsplash.com/photo-1527631746610-bca00a040d60",
-    count: 15
-  }
+    description: "Интересные места со всего мира",
+    thumbnailSrc: "https://images.unsplash.com/photo-1516483638261-f4dbaf036963",
+    photoCount: 32,
+  },
+  {
+    id: "5",
+    title: "Цветы и растения",
+    description: "Красивые цветы и экзотические растения",
+    thumbnailSrc: "https://images.unsplash.com/photo-1496309732348-3627f3f040ee",
+    photoCount: 12,
+  },
+  {
+    id: "6",
+    title: "Макросъемка",
+    description: "Удивительный мир в деталях",
+    thumbnailSrc: "https://images.unsplash.com/photo-1429198739803-7db875882052",
+    photoCount: 9,
+  },
 ];
 
-const Index = () => {
+export default function Index() {
   return (
-    <div className="min-h-screen bg-background">
-      <header className="bg-primary py-6">
-        <div className="container mx-auto">
-          <div className="flex justify-between items-center">
-            <h1 className="text-3xl font-bold text-primary-foreground flex items-center gap-2">
-              <Images className="h-8 w-8" />
-              ФотоАльбом
-            </h1>
+    <Layout>
+      <div className="container mx-auto py-8">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold">Мои фотоальбомы</h1>
+          <Button asChild>
             <Link to="/gallery">
-              <Button variant="secondary" className="flex items-center gap-2">
-                <GalleryHorizontal className="h-4 w-4" />
-                Все фотографии
-              </Button>
+              Все фотографии
             </Link>
-          </div>
+          </Button>
         </div>
-      </header>
 
-      <main className="container mx-auto py-12">
-        <section>
-          <h2 className="text-2xl font-semibold mb-6">Мои альбомы</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {albums.map((album) => (
-              <Link to={`/album/${album.id}`} key={album.id}>
-                <Card className="overflow-hidden transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
-                  <div className="aspect-[4/3] w-full overflow-hidden">
-                    <img 
-                      src={album.cover} 
-                      alt={album.title}
-                      className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
-                    />
-                  </div>
-                  <CardContent className="p-4">
-                    <h3 className="text-xl font-medium">{album.title}</h3>
-                    <p className="text-muted-foreground">{album.count} фотографий</p>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
-        </section>
-      </main>
-    </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {albums.map((album) => (
+            <Card key={album.id} className="overflow-hidden animate-fade-in hover:shadow-lg transition-shadow duration-300">
+              <div className="relative overflow-hidden h-48">
+                <img
+                  src={album.thumbnailSrc}
+                  alt={album.title}
+                  className="object-cover w-full h-full transition-transform duration-300 hover:scale-105"
+                />
+                <div className="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-full">
+                  {album.photoCount} фото
+                </div>
+              </div>
+              <CardContent className="pt-4">
+                <h2 className="text-xl font-bold mb-2">{album.title}</h2>
+                <p className="text-muted-foreground text-sm">{album.description}</p>
+              </CardContent>
+              <CardFooter>
+                <Button variant="outline" className="w-full">
+                  Открыть альбом
+                </Button>
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </Layout>
   );
-};
-
-export default Index;
+}

@@ -1,12 +1,5 @@
 
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface Photo {
   id: string;
@@ -24,27 +17,27 @@ interface PhotoModalProps {
 
 export const PhotoModal = ({ photo, isOpen, onClose }: PhotoModalProps) => {
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl w-[90vw]">
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-4xl">
         <DialogHeader>
-          <DialogTitle className="text-xl">{photo.title}</DialogTitle>
-          <DialogDescription>{photo.alt}</DialogDescription>
+          <DialogTitle>{photo.title}</DialogTitle>
         </DialogHeader>
-        
-        <div className="mt-4 overflow-hidden">
+        <div className="mt-4">
           <img
             src={photo.src}
             alt={photo.alt}
             className="w-full object-contain max-h-[70vh]"
           />
-        </div>
-        
-        <div className="flex flex-wrap gap-2 mt-4">
-          {photo.tags.map((tag) => (
-            <Badge key={tag} variant="secondary">
-              {tag}
-            </Badge>
-          ))}
+          <div className="mt-4">
+            <p className="text-muted-foreground">{photo.alt}</p>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {photo.tags.map((tag) => (
+                <span key={tag} className="text-xs bg-secondary px-2 py-1 rounded-full">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
