@@ -33,7 +33,7 @@ export default function Gallery() {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [viewType, setViewType] = useState("grid");
   const [gapSize, setGapSize] = useState(16);
-  const [orientation, setOrientation] = useState("portrait"); // portrait (10x15) or landscape (15x10)
+  const [orientation, setOrientation] = useState("portrait"); // portrait (10x15) или landscape (15x10)
   const [selectedAlbum, setSelectedAlbum] = useState<string | null>(null);
   const [showDeleteControls, setShowDeleteControls] = useState(false);
 
@@ -65,7 +65,9 @@ export default function Gallery() {
     });
 
     // Сбросить значение input для возможности повторной загрузки тех же файлов
-    event.target.value = '';
+    if (event.target) {
+      event.target.value = '';
+    }
   };
 
   const handleDeletePhoto = (photoId: string) => {
@@ -165,7 +167,7 @@ export default function Gallery() {
             <div className="flex justify-between mt-6 pt-4 border-t">
               <div className="flex gap-2">
                 <Button variant="outline" asChild>
-                  <label>
+                  <label className="cursor-pointer">
                     <Upload className="mr-2 h-4 w-4" />
                     Загрузить фото
                     <input 
@@ -203,7 +205,7 @@ export default function Gallery() {
           <div className="text-center py-20 border-2 border-dashed rounded-lg">
             <h2 className="text-xl font-medium text-muted-foreground mb-4">Нет загруженных фотографий</h2>
             <Button variant="outline" asChild>
-              <label>
+              <label className="cursor-pointer">
                 <Upload className="mr-2 h-4 w-4" />
                 Загрузить фото
                 <input 

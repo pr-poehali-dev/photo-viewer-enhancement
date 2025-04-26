@@ -32,13 +32,13 @@ export const GalleryGrid = ({
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
   
   // Определяем соотношение сторон и количество элементов в ряду
-  const aspectRatio = orientation === 'portrait' ? 2/3 : 3/2; // 10x15 or 15x10
+  const aspectRatio = orientation === 'portrait' ? 2/3 : 3/2; // 10x15 или 15x10
   const columns = orientation === 'portrait' ? 5 : 3; // 5 в ряд для портретной, 3 для ландшафтной
   
   return (
     <>
       <div 
-        className={`grid gap-${gapSize}`}
+        className="grid"
         style={{ 
           gap: `${gapSize}px`,
           gridTemplateColumns: `repeat(${columns}, 1fr)`
@@ -59,7 +59,7 @@ export const GalleryGrid = ({
                 />
               </AspectRatio>
               
-              {(showDeleteControls || true) && (
+              {showDeleteControls && (
                 <Button 
                   variant="destructive" 
                   size="icon" 
