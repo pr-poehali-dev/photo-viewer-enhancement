@@ -13,77 +13,100 @@ import { GalleryGrid } from "@/components/GalleryGrid";
 import { GalleryList } from "@/components/GalleryList";
 import { GalleryMasonry } from "@/components/GalleryMasonry";
 import { Layout } from "@/components/layout";
+import { Upload, Trash2, Printer } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 
-// Данные с фотографиями (обычно загружались бы через API)
-const photos = [
-  {
-    id: "1",
-    title: "Горный пейзаж",
-    src: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4",
-    alt: "Величественный горный пейзаж на рассвете",
-    tags: ["природа", "горы", "рассвет"],
-  },
-  {
-    id: "2",
-    title: "Морской берег",
-    src: "https://images.unsplash.com/photo-1505118380757-91f5f5632de0",
-    alt: "Спокойный морской берег с золотым песком",
-    tags: ["море", "пляж", "волны"],
-  },
-  {
-    id: "3",
-    title: "Городская архитектура",
-    src: "https://images.unsplash.com/photo-1517999144091-3d9dca6d1e43",
-    alt: "Современные небоскребы в центре города",
-    tags: ["город", "архитектура", "здания"],
-  },
-  {
-    id: "4",
-    title: "Осенний лес",
-    src: "https://images.unsplash.com/photo-1508193638397-1c4234db14d8",
-    alt: "Красочный осенний лес с желтыми и красными листьями",
-    tags: ["осень", "лес", "деревья"],
-  },
-  {
-    id: "5",
-    title: "Дикие животные",
-    src: "https://images.unsplash.com/photo-1546182990-dffeafbe841d",
-    alt: "Дикий лев отдыхает в саванне",
-    tags: ["животные", "лев", "дикая природа"],
-  },
-  {
-    id: "6",
-    title: "Цветочная композиция",
-    src: "https://images.unsplash.com/photo-1464982326199-86f32f81b211",
-    alt: "Яркая композиция из полевых цветов",
-    tags: ["цветы", "растения", "природа"],
-  },
-  {
-    id: "7",
-    title: "Водопад",
-    src: "https://images.unsplash.com/photo-1494472155656-f34e81b17ddc",
-    alt: "Мощный водопад среди скал и зелени",
-    tags: ["вода", "природа", "водопад"],
-  },
-  {
-    id: "8",
-    title: "Закат на пляже",
-    src: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e",
-    alt: "Потрясающий закат с отражением в океане",
-    tags: ["закат", "море", "пляж"],
-  },
-  {
-    id: "9",
-    title: "Горное озеро",
-    src: "https://images.unsplash.com/photo-1501785888041-af3ef285b470",
-    alt: "Кристально чистое горное озеро в окружении гор",
-    tags: ["озеро", "горы", "природа"],
-  },
-];
+interface Photo {
+  id: string;
+  title: string;
+  src: string;
+  alt: string;
+  tags: string[];
+  albumId?: string;
+}
 
 export default function Gallery() {
+  const { toast } = useToast();
+  const [photos, setPhotos] = useState<Photo[]>([]);
   const [viewType, setViewType] = useState("grid");
   const [gapSize, setGapSize] = useState(16);
+  const [orientation, setOrientation] = useState("portrait"); // portrait (10x15) or landscape (15x10)
+  const [selectedAlbum, setSelectedAlbum] = useState<string | null>(null);
+  const [showDeleteControls, setShowDeleteControls] = useState(false);
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    const newPhotos: Photo[] = [];
+
+    Array.from(files).forEach((file) => {
+      const url = URL.createObjectURL(file);
+      const newPhoto: Photo = {
+        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+        title: file.name.split('.')[0] || "Без названия",
+        src: url,
+        alt: file.name.split('.')[0] || "Изображение без описания",
+        tags: [],
+        albumId: selectedAlbum || undefined
+      };
+      
+      newPhotos.push(newPhoto);
+    });
+
+    setPhotos([...photos, ...newPhotos]);
+    
+    toast({
+      title: "Фотографии загружены",
+      description: `Добавлено ${newPhotos.length} фотографий`,
+    });
+
+    // Сбросить значение input для возможности повторной загрузки тех же файлов
+    event.target.value = '';
+  };
+
+  const handleDeletePhoto = (photoId: string) => {
+    setPhotos(photos.filter(photo => photo.id !== photoId));
+    
+    toast({
+      title: "Фотография удалена",
+      description: "Фотография была успешно удалена"
+    });
+  };
+
+  const handleDeleteAllPhotos = () => {
+    if (photos.length === 0) return;
+    
+    setPhotos([]);
+    
+    toast({
+      title: "Все фотографии удалены",
+      description: `Удалено ${photos.length} фотографий`
+    });
+  };
+
+  const handlePrintGallery = () => {
+    if (photos.length === 0) {
+      toast({
+        title: "Невозможно распечатать",
+        description: "В галерее нет фотографий для печати",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    toast({
+      title: "Подготовка к печати",
+      description: "Подготовка фотографий для печати..."
+    });
+    
+    setTimeout(() => {
+      window.print();
+    }, 500);
+  };
 
   return (
     <Layout>
@@ -102,6 +125,19 @@ export default function Gallery() {
                     <TabsTrigger value="masonry" className="flex-1">Мазонри</TabsTrigger>
                   </TabsList>
                 </Tabs>
+                
+                <div className="mt-4">
+                  <Label htmlFor="orientation-select">Ориентация фотографий</Label>
+                  <Select value={orientation} onValueChange={setOrientation}>
+                    <SelectTrigger id="orientation-select">
+                      <SelectValue placeholder="Выберите ориентацию" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="portrait">Портретная (10x15)</SelectItem>
+                      <SelectItem value="landscape">Ландшафтная (15x10)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               <div>
@@ -114,16 +150,101 @@ export default function Gallery() {
                   step={4}
                   className="py-4"
                 />
+                
+                <div className="flex items-center space-x-2 mt-4">
+                  <Switch 
+                    id="delete-mode" 
+                    checked={showDeleteControls}
+                    onCheckedChange={setShowDeleteControls}
+                  />
+                  <Label htmlFor="delete-mode">Режим удаления</Label>
+                </div>
               </div>
+            </div>
+            
+            <div className="flex justify-between mt-6 pt-4 border-t">
+              <div className="flex gap-2">
+                <Button variant="outline" asChild>
+                  <label>
+                    <Upload className="mr-2 h-4 w-4" />
+                    Загрузить фото
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      className="hidden" 
+                      onChange={handleFileUpload}
+                      multiple
+                    />
+                  </label>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={handlePrintGallery}
+                  disabled={photos.length === 0}
+                >
+                  <Printer className="mr-2 h-4 w-4" />
+                  Печать
+                </Button>
+              </div>
+              
+              <Button 
+                variant="destructive" 
+                onClick={handleDeleteAllPhotos}
+                disabled={photos.length === 0}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Удалить все фото
+              </Button>
             </div>
           </CardContent>
         </Card>
 
-        <div className="mb-8">
-          {viewType === "grid" && <GalleryGrid photos={photos} gapSize={gapSize} />}
-          {viewType === "list" && <GalleryList photos={photos} gapSize={gapSize} />}
-          {viewType === "masonry" && <GalleryMasonry photos={photos} gapSize={gapSize} />}
-        </div>
+        {photos.length === 0 ? (
+          <div className="text-center py-20 border-2 border-dashed rounded-lg">
+            <h2 className="text-xl font-medium text-muted-foreground mb-4">Нет загруженных фотографий</h2>
+            <Button variant="outline" asChild>
+              <label>
+                <Upload className="mr-2 h-4 w-4" />
+                Загрузить фото
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  className="hidden" 
+                  onChange={handleFileUpload}
+                  multiple
+                />
+              </label>
+            </Button>
+          </div>
+        ) : (
+          <div className="mb-8">
+            {viewType === "grid" && (
+              <GalleryGrid 
+                photos={photos} 
+                gapSize={gapSize} 
+                orientation={orientation}
+                showDeleteControls={showDeleteControls}
+                onDeletePhoto={handleDeletePhoto}
+              />
+            )}
+            {viewType === "list" && (
+              <GalleryList 
+                photos={photos} 
+                gapSize={gapSize} 
+                showDeleteControls={showDeleteControls}
+                onDeletePhoto={handleDeletePhoto}
+              />
+            )}
+            {viewType === "masonry" && (
+              <GalleryMasonry 
+                photos={photos} 
+                gapSize={gapSize}
+                showDeleteControls={showDeleteControls}
+                onDeletePhoto={handleDeletePhoto}
+              />
+            )}
+          </div>
+        )}
       </div>
     </Layout>
   );
